@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Runtime data — the local JSON "database" (contains real user password
+# hashes) and uploaded/scanned files. Never source-controlled.
+database/
+storage/

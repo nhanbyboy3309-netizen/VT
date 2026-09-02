@@ -1,0 +1,5 @@
+{
+  "name": "Hệ Thống Quản Lý Văn Thư",
+  "description": "Ứng dụng quản lý công văn, hợp đồng, quyết định với tính năng cấp mã số, theo dõi vị trí lưu trữ và thời hạn hợp đồng.",
+  "requestFramePermissions": ["camera"]
+}
