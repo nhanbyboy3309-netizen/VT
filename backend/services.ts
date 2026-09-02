@@ -98,6 +98,7 @@ export class SettingsService {
       storageStructure: settings.storageStructure || 'by_type',
       physicalLocations: settings.physicalLocations || ['Kho A', 'Kho B'],
       scanFolder: settings.scanFolder || 'C:/Scans',
+      autoScanEnabled: settings.autoScanEnabled ?? false,
       storageFolders: settings.storageFolders || [
         { id: 'cong_van_den', name: 'Công văn đến', physicalLocation: 'Kho A / Tủ 1' },
         { id: 'cong_van_di', name: 'Công văn đi', physicalLocation: 'Kho A / Tủ 2' },

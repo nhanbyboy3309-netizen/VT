@@ -121,6 +121,17 @@ export const apiService = {
     return await res.json();
   },
 
+  async getPendingScanFiles() {
+    const res = await fetch(`${API_URL}/scan/pending`, {
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || 'Failed to fetch pending scan files');
+    }
+    return await res.json();
+  },
+
   async triggerScan() {
     const res = await fetch(`${API_URL}/scan/trigger`, {
       method: 'POST',

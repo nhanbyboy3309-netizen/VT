@@ -6,6 +6,7 @@ import fs from 'fs';
 import os from 'os';
 import { AuthService, DocumentService, SettingsService, DocumentTypeService, StorageLocationService, DashboardService, DepartmentService, EditRequestService } from './services.js';
 import * as authz from './authz.js';
+import { startAutoScanLoop, listPendingScanFiles } from './autoScan.js';
 import jwt from 'jsonwebtoken';
 import { createServer as createViteServer } from 'vite';
 
@@ -648,6 +649,18 @@ async function startServer() {
     }
   });
 
+  // Files currently sitting in the scan folder that auto-scan hasn't been
+  // able to match to a document yet (matched files get moved out on the
+  // spot, so whatever remains here is exactly the unmatched set).
+  app.get('/api/scan/pending', authenticate, authorizeAdmin, async (req, res) => {
+    try {
+      const files = await listPendingScanFiles();
+      res.json(files);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get('/api/dashboard/stats', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
        const stats = await DashboardService.getStats(req.user);
@@ -676,6 +689,8 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  startAutoScanLoop();
 }
 
 startServer();

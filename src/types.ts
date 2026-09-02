@@ -118,6 +118,10 @@ export interface SystemSettings {
   storageStructure?: 'flat' | 'by_type' | 'by_year' | 'by_year_type';
   physicalLocations?: string[];
   scanFolder?: string;
+  // Admin toggle: when on, a server-side background sweep matches new files
+  // in scanFolder to a document (by filename, then OCR content) and
+  // attaches them automatically.
+  autoScanEnabled?: boolean;
   storageFolders?: StorageFolder[];
   storageLocations?: StorageLocationNode[];
   // How many hours a Nhân viên may freely edit a shared/company document

@@ -4,6 +4,7 @@ import { subscribeToDocumentTypes, addDocumentType, updateDocumentType, deleteDo
 import { subscribeToStorageLocations, addStorageLocation, updateStorageLocation, deleteStorageLocation } from '../services/storageLocationService';
 import { subscribeToDepartments, addDepartment, renameDepartment, deleteDepartment } from '../services/departmentService';
 import { subscribeToEditRequests, resolveEditRequest } from '../services/editRequestService';
+import { apiService } from '../services/apiService';
 import { SystemSettings, DocumentTypeConfig, StorageLocationNode, Department, EditRequest } from '../types';
 import {
   Settings as SettingsIcon,
@@ -94,6 +95,9 @@ export default function SettingsPanel() {
   // Edit-request approval queue (Admin only)
   const [editRequests, setEditRequests] = useState<EditRequest[]>([]);
 
+  // Files sitting in the scan folder that auto-scan hasn't matched yet (Admin only)
+  const [pendingScanFiles, setPendingScanFiles] = useState<{ name: string; mtime: string }[]>([]);
+
   const handleAddFolder = async () => {
     if (!newFolderName.trim() || !newFolderLoc.trim() || !settings) return;
     const folders = settings.storageFolders || [];
@@ -148,12 +152,23 @@ export default function SettingsPanel() {
     const unsubLocations = subscribeToStorageLocations(setStorageLocations);
     const unsubDepartments = subscribeToDepartments(setDepartments);
     const unsubEditRequests = isAdmin ? subscribeToEditRequests(setEditRequests) : undefined;
+
+    let scanFilesInterval: ReturnType<typeof setInterval> | undefined;
+    if (isAdmin) {
+      const fetchPending = () => {
+        apiService.getPendingScanFiles().then(setPendingScanFiles).catch(() => {});
+      };
+      fetchPending();
+      scanFilesInterval = setInterval(fetchPending, 15000);
+    }
+
     return () => {
       unsubSettings();
       unsubTypes();
       unsubLocations();
       unsubDepartments();
       unsubEditRequests?.();
+      if (scanFilesInterval) clearInterval(scanFilesInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -567,6 +582,49 @@ export default function SettingsPanel() {
                   <p className="text-[9px] text-slate-400 mt-1.5 ml-1 italic">
                     * Đường dẫn thư mục nơi máy quét vật lý lưu file. Hệ thống sẽ hỗ trợ theo dõi thư mục này.
                   </p>
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className={cn("w-4 h-4", settings.autoScanEnabled ? "text-emerald-600" : "text-slate-400")} />
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Tự động quét & đính kèm bản scan</p>
+                        <p className="text-[9px] text-slate-400 mt-0.5">Hệ thống tự kiểm tra thư mục quét mỗi 30 giây, khớp file với văn bản theo tên file (hoặc OCR nếu không khớp tên) rồi tự đính kèm.</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!settings.autoScanEnabled}
+                      onChange={(e) => setSettings({ ...settings, autoScanEnabled: e.target.checked })}
+                      className="w-5 h-5 accent-blue-600 shrink-0 ml-4"
+                    />
+                  </label>
+                  {!settings.autoScanEnabled && (
+                    <p className="text-[9px] text-amber-600 font-bold mt-2 ml-6">* Nhớ bấm "Lưu tất cả cấu hình" ở trên để áp dụng.</p>
+                  )}
+
+                  {pendingScanFiles.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        {pendingScanFiles.length} file đang chờ khớp với văn bản
+                      </p>
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+                        {pendingScanFiles.map(f => (
+                          <div key={f.name} className="flex items-center justify-between gap-2 text-[10px] bg-white px-3 py-2 rounded-xl border border-slate-100">
+                            <span className="font-mono font-bold text-slate-700 truncate">{f.name}</span>
+                            <span className="text-slate-400 shrink-0 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date(f.mtime).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-slate-400 italic mt-2">
+                        * Tên file không khớp số hiệu văn bản nào, và OCR cũng không tìm được số hiệu phù hợp. Hệ thống sẽ tự thử lại ở lần quét sau.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               )}
